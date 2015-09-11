@@ -2,10 +2,10 @@ var http = require('http');
 var urlparse = require('url').parse;
 var qsparse = require('querystring').parse;
 
+var pages = require('../pages');
+
 var srv = http.createServer(handle);
 srv.listen(process.env['HTTP_PORT']);
-
-var pages = {};
 
 function handle(req, res) {
   var parts = urlparse(req.url);
@@ -20,30 +20,32 @@ function handle(req, res) {
 }
 
 function handleGet(name, req, res) {
-  var content = pages[name];
+  var content = pages.getPage(name);
   if (content !== undefined) {
     res.writeHeader(200);
-    writePage(res, name, content);
+    outputPage(res, name, content);
   }
   else {
     res.writeHeader(404);
-    writePage(res, 'Not found sorry', '');
+    outputPage(res, 'Not found sorry', '');
   }
 }
 
 function handlePost(name, req, res) {
   readAll(req, function(buf) {
     var form = qsparse(buf.toString('utf8'));
-    pages[name] = form.content;
+    pages.savePage(name, form.content);
     res.writeHeader(303, {'Location': '/'+name});
     res.end();
   });
 }
 
-function writePage(res, name, content) {
+function outputPage(res, name, content) {
   res.write('<h1>' + name + '</h1>');
   res.write(content, 'utf8');
-  res.write('<form method="POST"><textarea name="content"></textarea><input type="submit"/></form>');
+  res.write('<form method="POST"><textarea name="content">' +
+            content +
+            '</textarea><input type="submit"/></form>');
   res.end();
 }
 
