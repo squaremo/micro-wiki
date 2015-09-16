@@ -1,8 +1,8 @@
 var http = require('http');
 var urlparse = require('url').parse;
+var readAll = require('us').readAll;
 
 var db = require('./db');
-var readAll = require('../us').readAll;
 
 var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
