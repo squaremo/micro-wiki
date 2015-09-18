@@ -1,0 +1,31 @@
+#!/bin/bash
+
+do_up() {
+    # # Run etcd    
+    # docker run -d -p 4001:4001 --name etcd quay.io/coreos/etcd \
+    #     -advertise-client-urls http://127.0.0.1:4001 \
+    #     -listen-client-urls http://0.0.0.0:4001
+
+    # pages service
+    docker run -d --name pages --hostname pages.weave.local micro-wiki/pages
+    
+    # prometheus
+    docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus
+
+
+}
+
+do_down() {
+#    docker rm -f etcd
+    docker rm -f prom
+    docker rm -f pages
+}
+
+case $1 in
+    up)
+        do_up
+        ;;
+    down)
+        do_down
+        ;;
+esac
