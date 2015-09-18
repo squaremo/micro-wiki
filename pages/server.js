@@ -1,11 +1,23 @@
 var http = require('http');
 var urlparse = require('url').parse;
+
 var readAll = require('us').readAll;
+var Prom = require('prometheus-client');
 
 var db = require('./db');
 
 var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
+
+var prom = new Prom();
+var count = prom.newCounter({
+  namespace: 'microwiki',
+  name: 'http_service_requests',
+  help: 'Requests to the pages service',
+  labels: {service: 'pages'},
+});
+
+prom.listen(process.env['PROM_PORT']);
 
 function pageName(req) {
     var parts = urlparse(req.url);
@@ -21,6 +33,9 @@ function handle(req, res) {
       db.savePage(pageName(req), content);
       res.writeHeader(204);
       res.end();
+      count.increment({
+        status: 204,
+      });
       return;
     });
   }
@@ -34,22 +49,32 @@ function handle(req, res) {
   else {
     res.writeHeader(405);
     res.end('Nope.');
+    count.increment({
+      status: 405,
+    });
   }
 }
 
 function malformed(res, msg) {
   res.writeHeader(400);
   res.end('Malformed request: ' + msg);
-  return;
+  count.increment({
+    status: 400,
+  });
 }
 
 function notfound(res) {
   res.writeHeader(404);
   res.end('Not found.');
-  return;
+  count.increment({
+    status: 404,
+  });
 }
 
 function found(res, content) {
   res.writeHeader(200);
   res.end(content);
+  count.increment({
+    status: 200,
+  });
 }

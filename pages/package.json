@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/squaremo/micro-wiki",
   "dependencies": {
-    "us": "file:../us"
+    "us": "file:../us",
+    "prometheus-client": "^0.1"
   }
 }
