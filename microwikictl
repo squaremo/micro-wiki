@@ -1,31 +1,41 @@
 #!/bin/bash
 
 do_up() {
-    # # Run etcd    
-    # docker run -d -p 4001:4001 --name etcd quay.io/coreos/etcd \
-    #     -advertise-client-urls http://127.0.0.1:4001 \
-    #     -listen-client-urls http://0.0.0.0:4001
+    case $1 in
 
-    # pages service
-    docker run -d --name pages --hostname pages.weave.local micro-wiki/pages
-    
-    # prometheus
-    docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus
-
-
+        pages)
+            # pages service
+            docker run -d --name pages \
+                --hostname pages.weave.local micro-wiki/pages
+            ;;
+        preso)
+            # preso front end
+            docker run -d --name preso \
+                -e PAGES_SVC=pages.weave.local \
+                -p 8080:80 --hostname preso.weave.local micro-wiki/preso
+            ;;
+        prom)
+            # prometheus
+            docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus
+            ;;
+        *)
+            echo "Sorry which service?" >&2
+    esac
 }
 
 do_down() {
 #    docker rm -f etcd
-    docker rm -f prom
-    docker rm -f pages
+    docker rm -f $1
 }
 
 case $1 in
     up)
-        do_up
+        do_up $2
         ;;
     down)
-        do_down
+        do_down $2
         ;;
+    restart)
+        do_down $2
+        do_up $2
 esac
