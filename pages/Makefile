@@ -1,7 +1,8 @@
 .PHONY: all
 
-JS_FILES=server.js db.js
+all: pages.uptodate
 
-all: $(JS_FILES) package.json
+pages.uptodate: *.js package.json
 	npm install
 	docker build -t micro-wiki/pages .
+	touch pages.uptodate
