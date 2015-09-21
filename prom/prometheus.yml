@@ -7,6 +7,12 @@ scrape_configs:
     target_groups:
       - targets: ['pages.weave.local:9090']
 
+  - job_name: 'preso'
+    scrape_interval: 5s
+    scrape_timeout: 10s
+    target_groups:
+      - targets: ['preso.weave.local:9090']
+
   - job_name: 'prometheus'
 
     # Override the global default and scrape targets from this job every 5 seconds.

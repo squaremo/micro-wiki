@@ -13,11 +13,16 @@ var prom = new Prom();
 var count = prom.newCounter({
   namespace: 'microwiki',
   name: 'http_service_requests',
-  help: 'Requests to the pages service',
+  help: 'Request to service',
   labels: {service: 'pages'},
 });
 
 prom.listen(process.env['PROM_PORT']);
+
+function log(req) {
+  var len = (req.headers['content-length'] || 0);
+  console.log('HTTP %s %s (%d bytes)', req.method, req.url, len);
+}
 
 function pageName(req) {
     var parts = urlparse(req.url);
@@ -25,12 +30,17 @@ function pageName(req) {
 }
 
 function handle(req, res) {
+  log(req);
   if (req.method == 'POST') {
     readAll(req, function(err, content) {
       if (err !== null) {
-        return malformed(res, err);
+        res.writeHeader(500);
+        res.end('Error reading content: ' + err);
+        count.increment({status: 500});
+        return;
       }
       db.savePage(pageName(req), content);
+      console.log('Saved %d bytes to "%s"', content.length, pageName(req));
       res.writeHeader(204);
       res.end();
       count.increment({
@@ -41,7 +51,7 @@ function handle(req, res) {
   }
   else if (req.method == 'GET') {
     var content = db.getPage(pageName(req));
-    if (content == undefined) {
+    if (content === undefined) {
       return notfound(res);
     }
     return found(res, content);
