@@ -50,11 +50,15 @@ function handle(req, res) {
     });
   }
   else if (req.method == 'GET') {
-    var content = db.getPage(pageName(req));
-    if (content === undefined) {
-      return notfound(res);
-    }
-    return found(res, content);
+    db.getPage(pageName(req), function(err, content) {
+      if (err !== null) {
+        return borked(res, err);
+      }
+      else if (content === undefined) {
+        return notfound(res);
+      }
+      return found(res, content);
+    });
   }
   else {
     res.writeHeader(405);
@@ -86,5 +90,14 @@ function found(res, content) {
   res.end(content);
   count.increment({
     status: 200,
+  });
+}
+
+function borked(res, err) {
+  console.log(err);
+  res.writeHeader(500);
+  res.end('BORKED');
+  count.increment({
+    status: 500
   });
 }

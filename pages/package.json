@@ -19,6 +19,7 @@
   "homepage": "https://github.com/squaremo/micro-wiki",
   "dependencies": {
     "us": "file:../us",
+    "ioredis": "^1.9",
     "prometheus-client": "^0.1"
   }
 }

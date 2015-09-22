@@ -4,12 +4,14 @@ do_up() {
     case $1 in
         "")
             do_up prom
+            do_up redis
             do_up pages
             do_up preso
             ;;
         pages)
             # pages service
             docker run -d --name pages \
+                -e REDIS_SVC=redis.weave.local \
                 --hostname pages.weave.local micro-wiki/pages
             ;;
         preso)
@@ -22,6 +24,11 @@ do_up() {
             # prometheus
             docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus
             ;;
+        redis)
+            docker run -d --name redis \
+                --hostname redis.weave.local \
+                litaio/redis
+            ;;
         *)
             echo "Sorry which service?" >&2
     esac
@@ -30,7 +37,7 @@ do_up() {
 do_down() {
 #    docker rm -f etcd
     if [ -z "$1" ]; then
-        docker rm -f preso pages prom
+        docker rm -f preso pages prom redis
     else
         docker rm -f $1
     fi
