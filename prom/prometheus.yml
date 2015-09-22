@@ -4,14 +4,20 @@ scrape_configs:
   - job_name: 'pages'
     scrape_interval: 5s
     scrape_timeout: 10s
-    target_groups:
-      - targets: ['pages.weave.local:9090']
+    dns_sd_configs:
+        - port: 9090
+          type: A
+          names:
+            - 'pages.weave.local'
 
   - job_name: 'preso'
     scrape_interval: 5s
     scrape_timeout: 10s
-    target_groups:
-      - targets: ['preso.weave.local:9090']
+    dns_sd_configs:
+        - port: 9090
+          type: A
+          names:
+            - 'preso.weave.local'
 
   - job_name: 'prometheus'
 

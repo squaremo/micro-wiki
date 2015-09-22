@@ -10,12 +10,18 @@ var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
 
 var prom = new Prom();
-var count = prom.newCounter({
+var counter = prom.newCounter({
   namespace: 'microwiki',
   name: 'http_service_requests',
   help: 'Request to service',
-  labels: {service: 'pages'},
 });
+
+function count(obj) {
+  counter.increment({
+    status: obj.status,
+    service: 'pages',
+    service_instance: process.env['INSTANCE'] || 'pages'});
+}
 
 prom.listen(process.env['PROM_PORT']);
 
@@ -36,16 +42,14 @@ function handle(req, res) {
       if (err !== null) {
         res.writeHeader(500);
         res.end('Error reading content: ' + err);
-        count.increment({status: 500});
+        count({status: 500});
         return;
       }
       db.savePage(pageName(req), content);
       console.log('Saved %d bytes to "%s"', content.length, pageName(req));
       res.writeHeader(204);
       res.end();
-      count.increment({
-        status: 204,
-      });
+      count({status: 204});
       return;
     });
   }
@@ -63,41 +67,31 @@ function handle(req, res) {
   else {
     res.writeHeader(405);
     res.end('Nope.');
-    count.increment({
-      status: 405,
-    });
+    count({status: 405});
   }
 }
 
 function malformed(res, msg) {
   res.writeHeader(400);
   res.end('Malformed request: ' + msg);
-  count.increment({
-    status: 400,
-  });
+  count({status: 400});
 }
 
 function notfound(res) {
   res.writeHeader(404);
   res.end('Not found.');
-  count.increment({
-    status: 404,
-  });
+  count({status: 404});
 }
 
 function found(res, content) {
   res.writeHeader(200);
   res.end(content);
-  count.increment({
-    status: 200,
-  });
+  count({status: 200});
 }
 
 function borked(res, err) {
   console.log(err);
   res.writeHeader(500);
   res.end('BORKED');
-  count.increment({
-    status: 500
-  });
+  count({status: 500});
 }

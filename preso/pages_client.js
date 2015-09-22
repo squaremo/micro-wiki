@@ -2,12 +2,21 @@ var http = require('http');
 var readAll = require('us').readAll;
 var prom = require('./prom');
 
-var client_counter = prom.newCounter({
+var counter = prom.newCounter({
   namespace: 'microwiki',
   name: 'http_client',
   help: 'Service requests',
-  labels: {service: 'pages', client: 'preso'}
 });
+
+function count(obj) {
+  counter.increment({
+    operation: obj.operation,
+    result: obj.result,
+    service: 'pages',
+    client: 'preso',
+    client_instance: process.env['INSTANCE'] || 'preso'
+  });
+}
 
 var PAGES_SVC = process.env['PAGES_SVC'] || 'pages';
 
@@ -15,15 +24,15 @@ function getPage(name, k) {
   http.request({host: PAGES_SVC, path: '/' + name}, function(res) {
     switch (res.statusCode) {
     case 200:
-      client_counter.increment({operation: 'getPage', result: 'ok'});
+      count({operation: 'getPage', result: 'ok'});
       readAll(res, k);
       return;
     case 404:
-      client_counter.increment({operation: 'getPage', result: 'notfound'});
+      count({operation: 'getPage', result: 'notfound'});
       k(null, undefined);
       return;
     default:
-      client_counter.increment({operation: 'getPage', result: 'error'});
+      count({operation: 'getPage', result: 'error'});
       k(new Error('Unexpected response ' + res.StatusCode));
       return;
     }
@@ -38,11 +47,11 @@ function savePage(name, content, k) {
   req.on('response', function(res) {
     switch (res.statusCode) {
     case 204:
-      client_counter.increment({operation: 'savePage', result: 'ok'});
+      count({operation: 'savePage', result: 'ok'});
       k(null);
       return;
     default:
-      client_counter.increment({operation: 'savePage', result: 'error'});
+      count({operation: 'savePage', result: 'error'});
       k(new Error('Unexpected response: ' + res.statusCode));
       return;
     }

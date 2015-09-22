@@ -5,12 +5,21 @@ do_up() {
         "")
             do_up prom
             do_up redis
-            do_up pages
+            do_up pages1
+            do_up pages2
             do_up preso
             ;;
-        pages)
+        pages1)
             # pages service
-            docker run -d --name pages \
+            docker run -d --name pages1 \
+                -e INSTANCE=pages1 \
+                -e REDIS_SVC=redis.weave.local \
+                --hostname pages.weave.local micro-wiki/pages
+            ;;
+        pages2)
+            # pages service, instance two please
+            docker run -d --name pages2 \
+                -e INSTANCE=pages2 \
                 -e REDIS_SVC=redis.weave.local \
                 --hostname pages.weave.local micro-wiki/pages
             ;;
@@ -22,7 +31,7 @@ do_up() {
             ;;
         prom)
             # prometheus
-            docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus
+            docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus:master
             ;;
         redis)
             docker run -d --name redis \
@@ -37,7 +46,7 @@ do_up() {
 do_down() {
 #    docker rm -f etcd
     if [ -z "$1" ]; then
-        docker rm -f preso pages prom redis
+        docker rm -f preso pages1 pages2 prom redis
     else
         docker rm -f $1
     fi
