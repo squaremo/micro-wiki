@@ -2,7 +2,11 @@
 
 do_up() {
     case $1 in
-
+        "")
+            do_up prom
+            do_up pages
+            do_up preso
+            ;;
         pages)
             # pages service
             docker run -d --name pages \
@@ -25,7 +29,11 @@ do_up() {
 
 do_down() {
 #    docker rm -f etcd
-    docker rm -f $1
+    if [ -z "$1" ]; then
+        docker rm -f preso pages prom
+    else
+        docker rm -f $1
+    fi
 }
 
 case $1 in
