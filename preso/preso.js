@@ -75,6 +75,7 @@ function handlePost(name, req, res) {
 function outputPage(res, name, content) {
   res.write('<h1>' + name + '</h1>');
   res.write(content, 'utf8');
+  res.write('<hr/>');
   res.write('<form method="POST"><textarea name="content">' +
             content +
             '</textarea><input type="submit"/></form>');
