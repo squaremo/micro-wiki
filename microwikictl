@@ -1,6 +1,22 @@
 #!/bin/bash
 
-ALL="prom redis pages1 pages2 preso"
+ALL="prom etcd redis pages1 pages2 preso conf bal"
+HIDE_FROM_SCOPE="-l works.weave.role=system"
+CURL="docker run --rm --entrypoint=/usr/bin/curl weaveworks/weaveexec"
+
+reg_service() {
+    local C=$1
+    local S=$2
+    local IP=$(docker exec $C ip -f inet addr show dev ethwe | \
+        grep -o 'inet [.0-9]*' | \
+        cut -d ' ' -f 2)
+    $CURL -sS -XPUT -d value='{"Port": 80, "IPAddress":"'$IP'"}' \
+        http://etcd:4001/v2/keys/weave/service/$S/$C
+}
+
+unreg_service() {
+    local 
+}
 
 do_up() {
     case $1 in
@@ -11,33 +27,55 @@ do_up() {
             # pages service
             docker run -d --name pages1 \
                 -e INSTANCE=pages1 \
-                -e REDIS_SVC=redis.weave.local \
+                -e REDIS_SVC=redis.svc.weave.local \
                 --hostname pages.weave.local micro-wiki/pages
+            reg_service pages1 pages
             ;;
         pages2)
             # pages service, instance two please
             docker run -d --name pages2 \
                 -e INSTANCE=pages2 \
-                -e REDIS_SVC=redis.weave.local \
+                -e REDIS_SVC=redis.svc.weave.local \
                 --hostname pages.weave.local micro-wiki/pages
+            reg_service pages2 pages
             ;;
         preso)
             # preso front end
             docker run -d --name preso \
-                -e PAGES_SVC=pages.weave.local \
+                -e PAGES_SVC=pages.svc.weave.local \
                 -p 8080:80 --hostname preso.weave.local micro-wiki/preso
             ;;
         prom)
             # prometheus
             docker run -d --name prom \
                 -v `pwd`/prom:/etc/prometheus -p 9090:9090 \
-                -l works.weave.role=system \
+                $HIDE_FROM_SCOPE \
                 prom/prometheus:master
             ;;
         redis)
             docker run -d --name redis \
-                --hostname redis.weave.local \
+                --hostname redis.svc.weave.local \
                 litaio/redis
+            ;;
+        etcd)
+            docker run -d --name etcd \
+                -h etcd.weave.local \
+                $HIDE_FROM_SCOPE \
+                quay.io/coreos/etcd \
+                -advertise-client-urls http://etcd:4001 \
+                -listen-client-urls http://0.0.0.0:4001
+            ;;
+        conf)
+            docker run -d --name conf \
+                $HIDE_FROM_SCOPE \
+                -v `pwd`/conf/haproxy.cfg.tmpl:/etc/confd/templates/haproxy.cfg.tmpl:ro \
+                micro-wiki/conf
+            ;;
+        bal)
+            docker run -d --name bal \
+                -h pages.svc.weave.local \
+                --volumes-from=conf \
+                haproxy:1.5 haproxy -f /usr/local/etc/haproxy/haproxy.cfg -db
             ;;
         *)
             echo "Sorry which service?" >&2

@@ -1,0 +1,7 @@
+[template]
+src = "haproxy.cfg.tmpl"
+dest = "/usr/local/etc/haproxy/haproxy.cfg"
+keys = [
+        "/weave/service"
+]
+reload_cmd = "echo restarting"
