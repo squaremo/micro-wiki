@@ -1,13 +1,11 @@
 #!/bin/bash
 
+ALL="prom redis pages1 pages2 preso"
+
 do_up() {
     case $1 in
         "")
-            do_up prom
-            do_up redis
-            do_up pages1
-            do_up pages2
-            do_up preso
+            for c in $ALL; do do_up $c; done
             ;;
         pages1)
             # pages service
@@ -49,7 +47,7 @@ do_up() {
 do_down() {
 #    docker rm -f etcd
     if [ -z "$1" ]; then
-        docker rm -f preso pages1 pages2 prom redis
+        docker rm -f $ALL
     else
         docker rm -f $1
     fi
