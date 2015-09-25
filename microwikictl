@@ -31,7 +31,10 @@ do_up() {
             ;;
         prom)
             # prometheus
-            docker run -d -p 9090:9090 --name prom -v `pwd`/prom:/etc/prometheus prom/prometheus:master
+            docker run -d --name prom \
+                -v `pwd`/prom:/etc/prometheus -p 9090:9090 \
+                -l works.weave.role=system \
+                prom/prometheus:master
             ;;
         redis)
             docker run -d --name redis \
