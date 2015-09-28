@@ -6,6 +6,8 @@ var Prom = require('prometheus-client');
 
 var db = require('./db');
 
+var VERSION = require('./package.json').version;
+
 var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
 
@@ -20,6 +22,7 @@ function count(obj) {
   counter.increment({
     status: obj.status,
     service: 'pages',
+    version: VERSION,
     service_instance: process.env['INSTANCE'] || 'pages'});
 }
 

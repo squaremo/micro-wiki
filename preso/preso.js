@@ -7,6 +7,8 @@ var readAll = require('us').readAll;
 var pages = require('./pages_client');
 var prom = require('./prom');
 
+var VERSION = require('./package.json').version;
+
 var srv = http.createServer(handle);
 srv.listen(process.env['HTTP_PORT']);
 
@@ -21,6 +23,7 @@ function count(obj) {
     method: obj.method,
     status: obj.status,
     service: 'preso',
+    version: VERSION,
     service_instance: process.env['INSTANCE'] || 'preso'
   });
 }
