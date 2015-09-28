@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ALL="prom etcd redis pages1 pages2 preso conf bal"
+ALL="prom etcd redis pages1 pages2 preso conf bal dashdb dash"
 HIDE_FROM_SCOPE="-l works.weave.role=system"
 CURL="docker run --rm --entrypoint=/usr/bin/curl weaveworks/weaveexec"
 
@@ -12,10 +12,6 @@ reg_service() {
         cut -d ' ' -f 2)
     $CURL -sS -XPUT -d value='{"Port": 80, "IPAddress":"'$IP'"}' \
         http://etcd:4001/v2/keys/weave/service/$S/$C
-}
-
-unreg_service() {
-    local 
 }
 
 do_up() {
@@ -76,6 +72,18 @@ do_up() {
                 -h pages.svc.weave.local \
                 --volumes-from=conf \
                 haproxy:1.5 haproxy -f /usr/local/etc/haproxy/haproxy.cfg -db
+            ;;
+        dashdb)
+            docker run --name dashdb \
+                -v /tmp/prom:/tmp/prom \
+                -e DATABASE_URL=sqlite3:/tmp/prom/file.sqlite3 \
+                prom/promdash ./bin/rake db:migrate
+            ;;
+        dash)
+            docker run -d --name dash \
+                -p 3000:3000 -v /tmp/prom:/tmp/prom \
+                -e DATABASE_URL=sqlite3:/tmp/prom/file.sqlite3 \
+                prom/promdash
             ;;
         *)
             echo "Sorry which service?" >&2
