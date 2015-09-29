@@ -118,4 +118,7 @@ case $1 in
     load)
         do_load
         ;;
+    *)
+        echo Unrecognised command "$1"
+        ;;
 esac
