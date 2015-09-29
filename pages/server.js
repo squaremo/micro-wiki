@@ -57,6 +57,9 @@ function handle(req, res) {
     });
   }
   else if (req.method == 'GET') {
+    if (Math.random() < 0.1) {
+      return borked(res, new Error('Random failure. Soz.'));
+    }
     db.getPage(pageName(req), function(err, content) {
       if (err !== null) {
         return borked(res, err);

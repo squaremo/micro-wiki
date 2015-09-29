@@ -10,8 +10,11 @@ function reqs() {
   }
 }
 
-function requestFinished() {
+function requestFinished(res) {
   requests--;
+  if (res && res.statusCode != 200) {
+    errors++;
+  }
   total++; report();
   setImmediate(reqs);
 }
@@ -29,7 +32,6 @@ function newRequest() {
   req.on('response', requestFinished);
   req.on('error', function(err) {
     console.error(err);
-    errors++;
     requestFinished();
   });
 }
