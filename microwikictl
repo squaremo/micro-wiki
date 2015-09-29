@@ -1,8 +1,12 @@
 #!/bin/bash
 
+set -e
+
 ALL="prom etcd redis pages1 pages2 preso conf bal dash"
 HIDE_FROM_SCOPE="-l works.weave.role=system"
 CURL="docker run --rm --entrypoint=/usr/bin/curl weaveworks/weaveexec"
+
+VERSION=${VERSION:-latest}
 
 reg_service() {
     local C=$1
@@ -24,7 +28,7 @@ do_up() {
             docker run -d --name pages1 \
                 -e INSTANCE=pages1 \
                 -e REDIS_SVC=redis.svc.weave.local \
-                --hostname pages.weave.local micro-wiki/pages
+                --hostname pages.weave.local micro-wiki/pages:$VERSION
             reg_service pages1 pages
             ;;
         pages2)
@@ -32,7 +36,7 @@ do_up() {
             docker run -d --name pages2 \
                 -e INSTANCE=pages2 \
                 -e REDIS_SVC=redis.svc.weave.local \
-                --hostname pages.weave.local micro-wiki/pages
+                --hostname pages.weave.local micro-wiki/pages:$VERSION
             reg_service pages2 pages
             ;;
         preso)
@@ -89,9 +93,9 @@ do_up() {
 do_down() {
 #    docker rm -f etcd
     if [ -z "$1" ]; then
-        docker rm -f $ALL
+        docker rm -f $ALL || true
     else
-        docker rm -f $1
+        docker rm -f $1 || true
     fi
 }
 

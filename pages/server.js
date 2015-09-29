@@ -7,6 +7,7 @@ var Prom = require('prometheus-client');
 var db = require('./db');
 
 var VERSION = require('./package.json').version;
+var FAILURE_RATE=0.05;
 
 var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
@@ -57,7 +58,7 @@ function handle(req, res) {
     });
   }
   else if (req.method == 'GET') {
-    if (Math.random() < 0.1) {
+    if (Math.random() < FAILURE_RATE) {
       return borked(res, new Error('Random failure. Soz.'));
     }
     db.getPage(pageName(req), function(err, content) {
