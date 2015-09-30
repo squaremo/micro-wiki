@@ -33,7 +33,7 @@ do_up() {
             ;;
         preso)
             # preso front end
-            docker run -d --name preso \
+            docker run -d --name preso --restart=always \
                 -e PAGES_SVC=pages.svc.weave.local \
                 -p 8080:80 --hostname preso.weave.local micro-wiki/preso
             ;;
