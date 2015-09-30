@@ -15,81 +15,93 @@ reg_service() {
         grep -o 'inet [.0-9]*' | \
         cut -d ' ' -f 2)
     $CURL -sS -XPUT -d value='{"Port": 80, "IPAddress":"'$IP'"}' \
-        http://etcd:4001/v2/keys/weave/service/$S/$C
+        http://etcd:4001/v2/keys/weave/service/$S/$C >/dev/null
+    echo Registered $C as service $S
+}
+
+unreg_service() {
+    local C=$1
+    local S=$2
+    $CURL -sS -XDELETE http://etcd:4001/v2/keys/weave/service/$S/$C || true >/dev/null
+    echo Deregistered $C from service $S
 }
 
 do_up() {
-    case $1 in
-        "")
-            for c in $ALL; do do_up $c; done
-            ;;
-        pages*)
-            # pages service
-            docker run -d --name $1 \
-                -e INSTANCE=$1 \
-                -e REDIS_SVC=redis.svc.weave.local \
-                --hostname pages.weave.local micro-wiki/pages:$VERSION
-            reg_service $1 pages
-            ;;
-        preso)
-            # preso front end
-            docker run -d --name preso --restart=always \
-                -e PAGES_SVC=pages.svc.weave.local \
-                -p 8080:80 --hostname preso.weave.local micro-wiki/preso
-            ;;
-        prom)
-            # prometheus
-            docker run -d --name prom \
-                -v `pwd`/prom:/etc/prometheus -p 9090:9090 \
-                $HIDE_FROM_SCOPE \
-                prom/prometheus:master
-            ;;
-        redis)
-            docker run -d --name redis \
-                --hostname redis.svc.weave.local \
-                litaio/redis
-            ;;
-        etcd)
-            docker run -d --name etcd \
-                -h etcd.weave.local \
-                $HIDE_FROM_SCOPE \
-                quay.io/coreos/etcd \
-                -advertise-client-urls http://etcd:4001 \
-                -listen-client-urls http://0.0.0.0:4001
-            ;;
-        conf)
-            docker run -d --name conf \
-                $HIDE_FROM_SCOPE \
-                -v `pwd`/conf/haproxy.cfg.tmpl:/etc/confd/templates/haproxy.cfg.tmpl:ro \
-                -v /var/run/docker.sock:/var/run/docker.sock \
-                micro-wiki/conf
-            ;;
-        bal)
-            docker run -d --name bal \
-                -h pages.svc.weave.local \
-                --volumes-from=conf \
-                haproxy:1.5 haproxy -f /var/run/haproxy/cfg -p /var/run/haproxy/pid -db
-            ;;
-        dash)
-            docker run -d --name dash \
-                -p 3000:3000 \
-                -v `pwd`/dash:/var/lib/grafana \
-                -v `pwd`/dash/grafana-plugins/datasources/prometheus:/usr/share/grafana/public/app/plugins/datasource/prometheus \
-                -e DATABASE_URL=sqlite3:/tmp/prom/file.sqlite3 \
-                grafana/grafana:2.1.3
-            ;;
-        *)
-            echo "Sorry which service?" >&2
-    esac
+    for c in "$@"; do
+        echo Starting $c ...
+        case $c in
+            pages*)
+                # pages service
+                docker run -d --name $c \
+                    -e INSTANCE=$c \
+                    -e REDIS_SVC=redis-svc.weave.local \
+                    --hostname pages.weave.local micro-wiki/pages:$VERSION
+                reg_service $c pages
+                ;;
+            preso)
+                # preso front end
+                docker run -d --name preso --restart=always \
+                    -e PAGES_SVC=pages-svc.weave.local \
+                    -p 8080:80 --hostname preso.weave.local micro-wiki/preso
+                ;;
+            prom)
+                # prometheus
+                docker run -d --name prom \
+                    -v `pwd`/prom:/etc/prometheus -p 9090:9090 \
+                    $HIDE_FROM_SCOPE \
+                    prom/prometheus:master
+                ;;
+            redis)
+                docker run -d --name redis \
+                    --hostname redis-svc.weave.local \
+                    litaio/redis
+                ;;
+            etcd)
+                docker run -d --name etcd \
+                    -h etcd.weave.local \
+                    $HIDE_FROM_SCOPE \
+                    quay.io/coreos/etcd \
+                    -advertise-client-urls http://etcd:4001 \
+                    -listen-client-urls http://0.0.0.0:4001
+                ;;
+            conf)
+                docker run -d --name conf \
+                    $HIDE_FROM_SCOPE \
+                    -v `pwd`/conf/haproxy.cfg.tmpl:/etc/confd/templates/haproxy.cfg.tmpl:ro \
+                    -v /var/run/docker.sock:/var/run/docker.sock \
+                    micro-wiki/conf
+                ;;
+            bal)
+                docker run -d --name bal \
+                    -h pages-svc.weave.local \
+                    --volumes-from=conf \
+                    haproxy:1.5 haproxy -f /var/run/haproxy/cfg -p /var/run/haproxy/pid -db
+                ;;
+            dash)
+                docker run -d --name dash \
+                    -p 3000:3000 \
+                    -v `pwd`/dash:/var/lib/grafana \
+                    -v `pwd`/dash/grafana-plugins/datasources/prometheus:/usr/share/grafana/public/app/plugins/datasource/prometheus \
+                    -e DATABASE_URL=sqlite3:/tmp/prom/file.sqlite3 \
+                    grafana/grafana:2.1.3
+                ;;
+            *)
+                echo "Sorry which service?" >&2
+        esac
+    done
 }
 
 do_down() {
-#    docker rm -f etcd
-    if [ -z "$1" ]; then
-        docker rm -f $ALL || true
-    else
-        docker rm -f $1 || true
-    fi
+    for c in "$@"; do
+        case $c in
+            pages*)
+                unreg_service $c pages
+                ;;
+            *)
+                ;;
+        esac
+        docker rm -f $c || true
+    done
 }
 
 do_load() {
@@ -97,16 +109,23 @@ do_load() {
     docker run --name load micro-wiki/load
 }
 
-case $1 in
+COMMAND=$1
+shift 1
+ARGS="$@"
+if [ -z "$ARGS" ]; then
+    ARGS=$ALL
+fi
+
+case $COMMAND in
     up)
-        do_up $2
+        do_up $ARGS
         ;;
     down)
-        do_down $2
+        do_down $ARGS
         ;;
     restart)
-        do_down $2
-        do_up $2
+        do_down $ARGS
+        do_up $ARGS
         ;;
     load)
         do_load
