@@ -23,21 +23,13 @@ do_up() {
         "")
             for c in $ALL; do do_up $c; done
             ;;
-        pages1)
+        pages*)
             # pages service
-            docker run -d --name pages1 \
-                -e INSTANCE=pages1 \
+            docker run -d --name $1 \
+                -e INSTANCE=$1 \
                 -e REDIS_SVC=redis.svc.weave.local \
                 --hostname pages.weave.local micro-wiki/pages:$VERSION
-            reg_service pages1 pages
-            ;;
-        pages2)
-            # pages service, instance two please
-            docker run -d --name pages2 \
-                -e INSTANCE=pages2 \
-                -e REDIS_SVC=redis.svc.weave.local \
-                --hostname pages.weave.local micro-wiki/pages:$VERSION
-            reg_service pages2 pages
+            reg_service $1 pages
             ;;
         preso)
             # preso front end
@@ -69,13 +61,14 @@ do_up() {
             docker run -d --name conf \
                 $HIDE_FROM_SCOPE \
                 -v `pwd`/conf/haproxy.cfg.tmpl:/etc/confd/templates/haproxy.cfg.tmpl:ro \
+                -v /var/run/docker.sock:/var/run/docker.sock \
                 micro-wiki/conf
             ;;
         bal)
             docker run -d --name bal \
                 -h pages.svc.weave.local \
                 --volumes-from=conf \
-                haproxy:1.5 haproxy -f /usr/local/etc/haproxy/haproxy.cfg -db
+                haproxy:1.5 haproxy -f /var/run/haproxy/cfg -p /var/run/haproxy/pid -db
             ;;
         dash)
             docker run -d --name dash \
