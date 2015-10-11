@@ -90,7 +90,7 @@ do_down() {
 }
 
 do_load() {
-    docker rm -f load
+    docker rm -f load || true
     docker run --name load micro-wiki/load
 }
 
