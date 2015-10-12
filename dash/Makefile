@@ -1,12 +1,13 @@
-.PHONY: all clean
+.PHONY: image clean
+.DEFAULT: image
 
-GRAFANA_REV:=57055f72c4745abe6c33a26359ebfb6e59920345
+image: .weevil.uptodate
 
-all: grafana-plugins
+.weevil.uptodate: weevil
+	make -C weevil
 
-grafana-plugins:
-	git clone https://github.com/grafana/grafana-plugins.git
-	cd grafana-plugins; git checkout $(GRAFANA_REV)
+weevil:
+	git clone https://github.com/squaremo/weevil.git
 
 clean:
-	rm -rf ./grafana-plugins
+	rm -rf weevil
