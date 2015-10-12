@@ -21,7 +21,7 @@ function count(obj) {
 var PAGES_SVC = process.env['PAGES_SVC'] || 'pages';
 
 function getPage(name, k) {
-  http.request({host: PAGES_SVC, path: '/' + name}, function(res) {
+  var req = http.request({host: PAGES_SVC, path: '/' + name}, function(res) {
     switch (res.statusCode) {
     case 200:
       count({operation: 'getPage', result: 'ok'});
@@ -36,7 +36,11 @@ function getPage(name, k) {
       k(new Error('Unexpected response ' + res.StatusCode));
       return;
     }
-  }).end();
+  });
+  req.end();
+  req.on('error', function(err) {
+    k(err);
+  });
 }
 
 function savePage(name, content, k) {
@@ -57,6 +61,9 @@ function savePage(name, content, k) {
     }
   });
   req.end(content);
+  req.on('error', function(err) {
+    k(err);
+  });
 }
 
 module.exports.getPage = getPage;
