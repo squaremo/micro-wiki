@@ -34,6 +34,10 @@ function newRequest() {
     console.error(err);
     requestFinished();
   });
+  req.setTimeout(5000, function() {
+    console.error('Request timed out');
+    requestFinished(new Error('timed out'));
+  });
 }
 
 reqs();

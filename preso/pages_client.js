@@ -41,11 +41,16 @@ function getPage(name, k) {
   req.on('error', function(err) {
     k(err);
   });
+  req.setTimeout(5000, function() {
+    count({operation: 'getPage', result: 'timeout'});
+    k(new Error('Request timed out'));
+  });
 }
 
 function savePage(name, content, k) {
   var req = http.request({host: PAGES_SVC,
                           path: '/' + name,
+                          agent: false,
                           method: 'POST'});
   req.setHeader('Content-Length', content.length);
   req.on('response', function(res) {
@@ -63,6 +68,10 @@ function savePage(name, content, k) {
   req.end(content);
   req.on('error', function(err) {
     k(err);
+  });
+  req.setTimeout(5000, function() {
+    count({operation: 'savePage', result: 'timeout'});
+    k(new Error('Request timed out'));
   });
 }
 
