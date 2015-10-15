@@ -2,28 +2,22 @@
 
 set -e
 
-ALL="prom etcd redis pages1 pages2 preso conf bal dash"
+ALL="prom etcd conf bal redis pages1 pages2 preso dash"
 HIDE_FROM_SCOPE="-l works.weave.role=system"
 CURL="docker run --rm --entrypoint=/usr/bin/curl weaveworks/weaveexec"
 
 VERSION=${VERSION:-latest}
 
 reg_service() {
-    local C=$1
-    local S=$2
-    local IP=$(docker exec $C ip -f inet addr show dev ethwe | \
-        grep -o 'inet [.0-9]*' | \
-        cut -d ' ' -f 2)
-    $CURL -sS -XPUT -d value='{"Port": 80, "IPAddress":"'$IP'"}' \
-        http://etcd:4001/v2/keys/weave/service/$S/$C >/dev/null
-    echo Registered $C as service $S
-}
-
-unreg_service() {
-    local C=$1
-    local S=$2
-    $CURL -sS -XDELETE http://etcd:4001/v2/keys/weave/service/$S/$C || true >/dev/null
-    echo Deregistered $C from service $S
+    local service=$1
+    local ipaddr=$2
+    local port=$3
+    local image=$4
+    weave dns-add $ipaddr weave -h $service.weave.local
+    echo coatlctl service add $service $ipaddr $port --docker-image=$image
+    docker run --rm \
+        -e ETCD_ADDRESS=http://etcd:4001 \
+        bboreham/coatlctl service add $service $ipaddr $port --docker-image=$image
 }
 
 do_up() {
@@ -36,12 +30,11 @@ do_up() {
                     -e INSTANCE=$c \
                     -e REDIS_SVC=redis-svc.weave.local \
                     --hostname pages.weave.local micro-wiki/pages:$VERSION
-                reg_service $c pages
                 ;;
             preso)
                 # preso front end
                 docker run -d --name preso --restart=always \
-                    -e PAGES_SVC=pages-svc.weave.local \
+                    -e PAGES_SVC=pages.weave.local \
                     -p 8080:80 --hostname preso.weave.local micro-wiki/preso
                 ;;
             prom)
@@ -65,17 +58,20 @@ do_up() {
                     -listen-client-urls http://0.0.0.0:4001
                 ;;
             conf)
+                reg_service pages-svc 10.128.0.5 80 micro-wiki/pages
                 docker run -d --name conf \
+                    -h conf.weave.local \
                     $HIDE_FROM_SCOPE \
-                    -v `pwd`/conf/haproxy.cfg.tmpl:/etc/confd/templates/haproxy.cfg.tmpl:ro \
-                    -v /var/run/docker.sock:/var/run/docker.sock \
-                    micro-wiki/conf
+                    -v /var/run/weave.sock:/var/run/docker.sock \
+                    -e ETCD_ADDRESS=http://etcd:4001 \
+                    bboreham/dlisten
                 ;;
             bal)
-                docker run -d --name bal \
-                    -h pages-svc.weave.local \
-                    --volumes-from=conf \
-                    haproxy:1.5 haproxy -f /var/run/haproxy/cfg -p /var/run/haproxy/pid -db
+                local etcd_ip=$(docker inspect --format='{{.NetworkSettings.IPAddress}}' etcd)
+                docker run --name bal \
+                    -d --net=host --privileged \
+                    -e ETCD_ADDRESS=http://$etcd_ip:4001 \
+                    ambergris/server
                 ;;
             dash)
                 docker run -d --name dash \
@@ -90,13 +86,6 @@ do_up() {
 
 do_down() {
     for c in "$@"; do
-        case $c in
-            pages*)
-                unreg_service $c pages
-                ;;
-            *)
-                ;;
-        esac
         docker rm -f $c || true
     done
 }
@@ -126,6 +115,13 @@ case $COMMAND in
         ;;
     load)
         do_load
+        ;;
+    start-infra)
+        weave launch-router
+        weave launch-proxy --rewrite-inspect \
+            -H tcp://0.0.0.0:12375 -H unix:///var/run/weave.sock
+        echo
+        echo 'Now do eval $(weave env)'
         ;;
     *)
         echo Unrecognised command "$1"
