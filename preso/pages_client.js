@@ -21,7 +21,7 @@ function count(obj) {
 var PAGES_SVC = process.env['PAGES_SVC'] || 'pages';
 
 function getPage(name, k) {
-  var req = http.request({host: PAGES_SVC, path: '/' + name}, function(res) {
+  var req = http.request({host: PAGES_SVC, path: '/' + name, agent:false}, function(res) {
     switch (res.statusCode) {
     case 200:
       count({operation: 'getPage', result: 'ok'});
