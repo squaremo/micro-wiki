@@ -8,7 +8,7 @@ image: .ambergris.uptodate
 	touch $@
 
 ambergris:
-	git clone -b build https://github.com/squaremo/ambergris
+	git clone https://github.com/dpw/ambergris
 
 clean:
 	rm -rf ambergris
