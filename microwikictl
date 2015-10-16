@@ -34,7 +34,7 @@ do_up() {
             preso)
                 # preso front end
                 docker run -d --name preso --restart=always \
-                    -e PAGES_SVC=pages.weave.local \
+                    -e PAGES_SVC=pages-svc.weave.local \
                     -p 8080:80 --hostname preso.weave.local micro-wiki/preso
                 ;;
             prom)
@@ -58,7 +58,7 @@ do_up() {
                     -listen-client-urls http://0.0.0.0:4001
                 ;;
             conf)
-                reg_service pages-svc 10.128.0.5 80 micro-wiki/pages
+                reg_service pages-svc 10.128.0.5 80 micro-wiki/pages || true
                 docker run -d --name conf \
                     -h conf.weave.local \
                     $HIDE_FROM_SCOPE \
@@ -118,6 +118,7 @@ case $COMMAND in
         ;;
     start-infra)
         weave launch-router
+        weave expose
         weave launch-proxy --rewrite-inspect \
             -H tcp://0.0.0.0:12375 -H unix:///var/run/weave.sock
         echo
