@@ -1,23 +1,31 @@
 ## Microservice-based wiki
 
-Assumes you are using the weave proxy:
-
-    $ weave launch
-    $ eval $(weave env)
-
 Build the various services:
 
-    $ make -C pages
-    $ make -C preso
+    $ for d in */Makefile; do make -C `dirname $d`; done
+
+You'll need a recent Node.JS and npm, and jq. And docker of course.
+
+Make sure a [recent weave script][weave-script] is on your path and
+start the infrastructure:
+
+    $ ./microwikictl start-infra
 
 Bring all the services up:
 
-    $ ./microservicectl up
+    $ ./microwikictl up
 
-The web interface is port-mapped to 8080; the Prometheus interface is
-port-mapped to 9090.
+The web interface is port-mapped to 8080 on the docker host; the
+Prometheus interface is port-mapped to 9090; and the dashboard is
+port-mapped to 3000.
+
+Run the load generator:
+
+    $ ./microwikictl load
 
 You can rebuild and restart a service:
 
     $ make -C preso
     $ ./microservice restart preso
+
+[weave-script]: E.g., `curl -L https://raw.githubusercontent.com/weaveworks/weave/master/weave > ./weave; chmod a+x; export PATH="$PATH":.`
