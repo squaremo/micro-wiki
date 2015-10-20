@@ -22,6 +22,7 @@ reg_service() {
 }
 
 do_up() {
+    eval $(weave env); DOCKER_TLS_VERIFY=
     for c in "$@"; do
         echo Starting $c ...
         case $c in
@@ -95,6 +96,7 @@ do_down() {
 }
 
 do_load() {
+    eval $(weave env); DOCKER_TLS_VERIFY=
     docker rm -f load || true
     docker run --name load micro-wiki/load
 }
@@ -125,8 +127,6 @@ case $COMMAND in
         weave expose
         weave launch-proxy --rewrite-inspect \
             -H tcp://0.0.0.0:12375 -H unix:///var/run/weave.sock
-        echo
-        echo 'Now do eval $(weave env)'
         ;;
     *)
         echo Unrecognised command "$1"
