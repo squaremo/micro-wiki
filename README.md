@@ -28,4 +28,4 @@ You can rebuild and restart a service:
     $ make -C preso
     $ ./microservice restart preso
 
-[weave-script]: E.g., `curl -L https://raw.githubusercontent.com/weaveworks/weave/master/weave > ./weave; chmod a+x; export PATH="$PATH":.`
+[weave-script]: https://github.com/weaveworks/weave/releases/download/latest_release/weave
