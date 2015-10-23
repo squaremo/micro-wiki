@@ -1,22 +1,17 @@
 var http = require('http');
 
-var requests = 0;
-var REQUESTS = 10;
 var total = 0, errors = 0;
 
-function reqs() {
-  while (requests < REQUESTS) {
-    newRequest()
-  }
-}
+var agent = new http.Agent({maxSockets: 10});
+var QPS = 10;
 
 function requestFinished(res) {
-  requests--;
   if (res && res.statusCode != 200) {
     errors++;
   }
+  // drain the data, so that the connection is closed
+  if (res) res.on('data', function() {});
   total++; report();
-  setImmediate(reqs);
 }
 
 function report() {
@@ -27,17 +22,16 @@ function report() {
 
 function newRequest() {
   var req = http.get({host: 'preso.weave.local',
-                      agent: false});
-  requests++;
+                      agent: agent});
   req.on('response', requestFinished);
   req.on('error', function(err) {
     console.error(err);
     requestFinished();
   });
-  req.setTimeout(5000, function() {
-    console.error('Request timed out');
-    requestFinished(new Error('timed out'));
-  });
+  // req.setTimeout(5000, function() {
+  //   console.error('Request timed out');
+  //   requestFinished(new Error('timed out'));
+  // });
 }
 
-reqs();
+setInterval(newRequest, 1000 / QPS);
