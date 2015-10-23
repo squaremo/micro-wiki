@@ -4,9 +4,9 @@ VERSION:=$(shell jq -r '.version' < ./package.json)
 
 all: pages.uptodate
 
-pages.uptodate: *.js package.json
+pages.uptodate: *.js package.json Dockerfile
 	npm install
-		docker build -t micro-wiki/pages:$(VERSION) .
+	docker build -t micro-wiki/pages:$(VERSION) .
 	touch pages.uptodate
 
 clean:
