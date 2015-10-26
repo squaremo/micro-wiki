@@ -2,8 +2,8 @@
 
 set -e
 
-APP="bal redis pages1 pages2 preso"
-INFRA="etcd prom conf dash"
+APP="redis pages1 pages2 preso"
+INFRA="etcd prom conf bal dash"
 HIDE_FROM_SCOPE="-l works.weave.role=system"
 export ETCD_ADDRESS="http://etcd:4001"
 CURL="docker run --rm --entrypoint=/usr/bin/curl weaveworks/weaveexec"
@@ -71,11 +71,13 @@ do_up() {
                 local etcd_ip=$(docker inspect --format='{{.NetworkSettings.IPAddress}}' etcd)
                 docker run --name bal \
                     -d --net=host --privileged \
+                    $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS=http://$etcd_ip:4001 \
                     ambergris/server
                 ;;
             dash)
                 docker run -d --name dash \
+                    $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS \
                     -p 3000:7070 \
                     weevil/server
