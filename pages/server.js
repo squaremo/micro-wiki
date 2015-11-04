@@ -7,7 +7,7 @@ var Prom = require('prometheus-client');
 var db = require('./db');
 
 var VERSION = require('./package.json').version;
-var FAILURE_RATE=0.05;
+var FAILURE_RATE=0.1;
 
 var server = http.createServer(handle);
 server.listen(process.env['HTTP_PORT']);
