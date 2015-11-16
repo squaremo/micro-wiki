@@ -22,7 +22,7 @@ reg_service() {
     echo amberctl service $service $ipaddr $port --fixed 80 --docker-image=$image
     docker run --rm \
         -e ETCD_ADDRESS \
-        ambergreen/amberctl service $service $ipaddr $port --protocol http --fixed 80 --docker-image=$image
+        squaremo/ambergreen-amberctl service $service $ipaddr $port --protocol http --fixed 80 --docker-image=$image
 }
 
 do_up() {
@@ -35,13 +35,13 @@ do_up() {
                 docker run -d --name $c \
                     -e INSTANCE=$c \
                     -e REDIS_SVC=redis-svc.weave.local \
-                    --hostname pages.weave.local micro-wiki/pages:$VERSION
+                    --hostname pages.weave.local squaremo/microwiki-pages:$VERSION
                 ;;
             preso)
                 # preso front end
                 docker run -d --name preso --restart=always \
                     -e PAGES_SVC=pages-svc.weave.local \
-                    -p 8080:80 --hostname preso.weave.local micro-wiki/preso
+                    -p 8080:80 --hostname preso.weave.local squaremo/microwiki-preso
                 ;;
             prom)
                 # prometheus
@@ -56,13 +56,13 @@ do_up() {
                     litaio/redis
                 ;;
             conf)
-                reg_service pages-svc 10.128.0.5 80 micro-wiki/pages || true
+                reg_service pages-svc 10.128.0.5 80 squaremo/microwiki-pages || true
                 docker run -d --name conf \
                     -h conf.weave.local \
                     $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS \
                     -v /var/run/weave/weave.sock:/var/run/docker.sock \
-                    ambergreen/agent
+                    squaremo/ambergreen-agent
                 ;;
             bal)
                 # Running in the host network stack rather than on the
@@ -72,14 +72,14 @@ do_up() {
                     -d --net=host --privileged \
                     $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS=http://$etcd_ip:4001 \
-                    ambergreen/balancer --expose-prometheus :9000
+                    squaremo/ambergreen-balancer --expose-prometheus :9000
                 ;;
             dash)
                 docker run -d --name dash \
                     $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS \
                     -p 3000:7070 \
-                    ambergreen/web
+                    squaremo/ambergreen-web
                 ;;
             etcd)
                 docker run -d --name etcd \
@@ -105,7 +105,7 @@ do_down() {
 do_load() {
     switch_to_weave_proxy
     docker rm -f load || true
-    docker run --name load micro-wiki/load
+    docker run --name load squaremo/microwiki-load
 }
 
 COMMAND=$1
