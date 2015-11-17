@@ -1,17 +1,28 @@
 ## Microservice-based wiki
 
-Build the various services:
+Create some hosts:
 
-    $ for d in */Makefile; do make -C `dirname $d`; done
+    $ docker-machine create -d virtualbox micro-wiki-1
+    $ docker-machine create -d virtualbox micro-wiki-2
 
-You'll need a recent Node.JS and npm, and jq. And docker of course.
+Make sure a [recent weave script][weave-script] is on your path, and
+*for each host* enlist the host in the weave network, supplying an IP
+address for each of the hosts. Since I used `docker-machine` to create
+the hosts, I switch between them with `docker-machine env`:
 
-Make sure a [recent weave script][weave-script] is on your path and
-start the infrastructure:
+    $ hosts="$(docker-machine ip micro-wiki-1 micro-wiki-2)"
+    $ eval $(docker-machine env micro-wiki-1)
+    $ ./microwikictl enlist-host $hosts
+    $ eval $(docker-machine env micro-wiki-2)
+    $ ./microwikictl enlist-host $hosts
 
+On one host, start the infrastructural services (etcd, prometheus, and
+a dashboard):
+
+    $ eval $(docker env micro-wiki-1)
     $ ./microwikictl start-infra
 
-Bring all the services up:
+On one or more hosts, bring all the services up:
 
     $ ./microwikictl up
 
