@@ -19,7 +19,7 @@ the hosts, I switch between them with `docker-machine env`:
 On one host, start the infrastructural services (etcd, prometheus, and
 a dashboard):
 
-    $ eval $(docker env micro-wiki-1)
+    $ eval $(docker-machine env micro-wiki-1)
     $ ./microwikictl start-infra
 
 On one or more hosts, bring all the services up:
