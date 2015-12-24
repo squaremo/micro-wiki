@@ -12,7 +12,7 @@ export PROM_ADDRESS="http://prom:9090"
 VERSION=${VERSION:-latest}
 
 switch_to_weave_proxy() {
-    eval `weave env`; DOCKER_TLS_VERIFY=
+    eval `weave env`
 }
 
 reg_service() {
