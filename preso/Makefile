@@ -4,5 +4,5 @@ all: preso.uptodate
 
 preso.uptodate: Dockerfile *.js package.json
 	npm install
-	docker build -t micro-wiki/preso .
+	docker build -t squaremo/microwiki-preso .
 	touch preso.uptodate

@@ -2,8 +2,8 @@
 
 set -e
 
-APP="pages1 pages2 preso"
-ONEHOST="etcd prom dash redis"
+APP="pages1 pages2 preso1 preso2"
+ONEHOST="etcd prom dash redis edge"
 PERHOST="conf bal"
 HIDE_FROM_SCOPE="-l works.weave.role=system"
 export ETCD_ADDRESS="http://etcd:4001"
@@ -24,7 +24,7 @@ reg_service() {
     echo amberctl service $service $ipaddr $port --fixed 80 --docker-image=$image
     docker run --rm \
         -e ETCD_ADDRESS \
-        squaremo/ambergreen-amberctl service $service $ipaddr $port --protocol http --fixed 80 --docker-image=$image
+        squaremo/ambergreen-amberctl service $service $ipaddr:$port --protocol http --port-fixed 80 --image=$image
 }
 
 do_up() {
@@ -39,11 +39,11 @@ do_up() {
                     -e REDIS_SVC=redis-svc.weave.local \
                     --hostname pages.weave.local squaremo/microwiki-pages:$VERSION
                 ;;
-            preso)
+            preso*)
                 # preso front end
-                docker run -d --name preso --restart=always \
-                    -e PAGES_SVC=pages-svc.weave.local \
-                    -p 8080:80 --hostname preso.weave.local squaremo/microwiki-preso
+                docker run -d --name $c \
+                       -e PAGES_SVC=pages-svc.weave.local -h preso.weave.local \
+                       squaremo/microwiki-preso
                 ;;
             prom)
                 # prometheus
@@ -60,6 +60,7 @@ do_up() {
                 ;;
             conf)
                 reg_service pages-svc 10.128.0.5 80 squaremo/microwiki-pages || true
+                reg_service preso-svc 10.128.0.9 80 squaremo/microwiki-preso || true
                 docker run -d --name conf \
                     -h conf.weave.local \
                     $HIDE_FROM_SCOPE \
@@ -96,6 +97,13 @@ do_up() {
                     -advertise-client-urls $ETCD_ADDRESS \
                     -listen-client-urls http://0.0.0.0:4001
                 ;;
+            edge)
+                docker run -d --name edge -p 8000:80 \
+                       -h edge.weave.local \
+                       -e ETCD_ADDRESS \
+                       -e SERVICE=preso-svc \
+                       squaremo/ambergreen-edgebal
+                ;;
             *)
                 echo "Sorry which service?" >&2
         esac
@@ -110,9 +118,8 @@ do_down() {
 }
 
 do_load() {
-    switch_to_weave_proxy
     docker rm -f load || true
-    docker run --name load squaremo/microwiki-load
+    docker run --net=host --name load squaremo/microwiki-load localhost 8000
 }
 
 COMMAND=$1

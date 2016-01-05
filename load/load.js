@@ -5,6 +5,9 @@ var total = 0, errors = 0;
 var agent = new http.Agent({maxSockets: 10});
 var QPS = 10;
 
+var host = process.argv[2] || 'localhost';
+var port = process.argv[3] || 8000;
+
 function requestFinished(res) {
   if (res && res.statusCode != 200) {
     errors++;
@@ -21,8 +24,9 @@ function report() {
 }
 
 function newRequest() {
-  var req = http.get({host: 'preso.weave.local',
-                      agent: agent});
+    var req = http.get({host: host,
+                        port: port,
+                        agent: agent});
   req.on('response', requestFinished);
   req.on('error', function(err) {
     console.error(err);
