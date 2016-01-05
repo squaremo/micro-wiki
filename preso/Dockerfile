@@ -1,4 +1,4 @@
-FROM google/nodejs
+FROM node
 WORKDIR /home/micro-wiki
 ADD ./package.json ./*.js /home/micro-wiki/
 COPY node_modules ./node_modules/
