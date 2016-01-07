@@ -1,7 +1,0 @@
-[template]
-src = "haproxy.cfg.tmpl"
-dest = "/var/run/haproxy/cfg"
-keys = [
-        "/weave/service"
-]
-reload_cmd = "docker exec bal haproxy -f /var/run/haproxy/cfg -p /var/run/haproxy/pid -sf $(cat /var/run/haproxy/pid) || true"
