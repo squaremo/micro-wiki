@@ -21,10 +21,10 @@ reg_service() {
     local port=$3
     local image=$4
     weave dns-add $ipaddr weave -h $service.weave.local
-    echo amberctl service $service $ipaddr $port --fixed 80 --docker-image=$image
+    echo amberctl service $service --address $ipaddr:$port/http --fixed 80 --docker-image=$image
     docker run --rm \
         -e ETCD_ADDRESS \
-        squaremo/ambergreen-amberctl service $service $ipaddr:$port --protocol http --port-fixed 80 --image=$image
+        squaremo/ambergreen-amberctl service $service --address $ipaddr:$port/http --port-fixed 80 --image=$image
 }
 
 do_up() {
@@ -79,7 +79,7 @@ do_up() {
                     -d --net=host --privileged \
                     $HIDE_FROM_SCOPE \
                     -e ETCD_ADDRESS=http://$etcd_ip:4001 \
-                    squaremo/ambergreen-balancer --expose-prometheus :9000
+                    squaremo/ambergreen-balancer --expose-prometheus :9000 --debug
                 ;;
             dash)
                 docker run -d --name dash \
@@ -93,6 +93,7 @@ do_up() {
                 docker run -d --name etcd \
                     -h etcd.weave.local \
                     $HIDE_FROM_SCOPE \
+                    -p 4001:4001 \
                     quay.io/coreos/etcd \
                     -advertise-client-urls $ETCD_ADDRESS \
                     -listen-client-urls http://0.0.0.0:4001
